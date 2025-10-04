@@ -92,15 +92,22 @@ model Approval {
   step        ApprovalStep? @relation(fields: [step_id], references: [id])
 }
 
+enum SequenceType {
+  SEQUENTIAL
+  PARALLEL
+}
+
 model ApprovalFlow {
-  id         String          @id @default(uuid())
-  name       String
-  company_id String
-  company    Company         @relation(fields: [company_id], references: [id])
-  steps      ApprovalStep[]
-  rules      ApprovalRule[]
-  is_active  Boolean         @default(true)
-  created_at DateTime        @default(now())
+  id                      String          @id @default(uuid())
+  name                    String
+  company_id              String
+  company                 Company         @relation(fields: [company_id], references: [id])
+  steps                   ApprovalStep[]
+  rules                   ApprovalRule[]
+  is_active               Boolean         @default(true)
+  sequence_type           SequenceType    @default(SEQUENTIAL)
+  min_approval_percentage Int             @default(100)
+  created_at              DateTime        @default(now())
 }
 
 model ApprovalStep {

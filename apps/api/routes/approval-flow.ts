@@ -25,7 +25,7 @@ router.use(adminOnly);
 // POST /api/approval-flows - Create multi-step approval flow for company
 router.post("/", async (req, res) => {
   try {
-    const { name, steps, rules } = req.body;
+    const { name, steps, rules, sequence_type, min_approval_percentage } = req.body;
     const userId = req.user_id;
 
     if (!name || !steps || !Array.isArray(steps) || steps.length === 0) {
@@ -59,6 +59,23 @@ router.post("/", async (req, res) => {
       }
     }
 
+    // Validate sequence_type if provided
+    if (sequence_type && !["SEQUENTIAL", "PARALLEL"].includes(sequence_type)) {
+      return res.status(400).json({
+        error: "sequence_type must be SEQUENTIAL or PARALLEL",
+      });
+    }
+
+    // Validate min_approval_percentage if provided
+    if (min_approval_percentage !== undefined) {
+      const percentage = parseInt(min_approval_percentage);
+      if (isNaN(percentage) || percentage < 1 || percentage > 100) {
+        return res.status(400).json({
+          error: "min_approval_percentage must be between 1 and 100",
+        });
+      }
+    }
+
     // Validate rules if provided
     if (rules && Array.isArray(rules)) {
       for (const rule of rules) {
@@ -85,6 +102,10 @@ router.post("/", async (req, res) => {
         name,
         company_id: user.company_id,
         is_active: true,
+        sequence_type: sequence_type || "SEQUENTIAL",
+        min_approval_percentage: min_approval_percentage !== undefined 
+          ? parseInt(min_approval_percentage) 
+          : 100,
         steps: {
           create: steps.map((step: any) => ({
             step_order: parseInt(step.step_order),
@@ -230,7 +251,7 @@ router.get("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, steps, rules, isActive } = req.body;
+    const { name, steps, rules, isActive, sequence_type, min_approval_percentage } = req.body;
     const userId = req.user_id;
 
     // Get user's company
@@ -274,6 +295,23 @@ router.put("/:id", async (req, res) => {
       }
     }
 
+    // Validate sequence_type if provided
+    if (sequence_type && !["SEQUENTIAL", "PARALLEL"].includes(sequence_type)) {
+      return res.status(400).json({
+        error: "sequence_type must be SEQUENTIAL or PARALLEL",
+      });
+    }
+
+    // Validate min_approval_percentage if provided
+    if (min_approval_percentage !== undefined) {
+      const percentage = parseInt(min_approval_percentage);
+      if (isNaN(percentage) || percentage < 1 || percentage > 100) {
+        return res.status(400).json({
+          error: "min_approval_percentage must be between 1 and 100",
+        });
+      }
+    }
+
     // Validate rules if provided
     if (rules && Array.isArray(rules)) {
       for (const rule of rules) {
@@ -303,6 +341,14 @@ router.put("/:id", async (req, res) => {
 
     if (isActive !== undefined) {
       updateData.is_active = isActive;
+    }
+
+    if (sequence_type !== undefined) {
+      updateData.sequence_type = sequence_type;
+    }
+
+    if (min_approval_percentage !== undefined) {
+      updateData.min_approval_percentage = parseInt(min_approval_percentage);
     }
 
     // Update flow
@@ -415,6 +461,53 @@ router.delete("/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deactivating approval flow:", error);
     res.status(500).json({ error: "Failed to deactivate approval flow" });
+  }
+});
+
+// PATCH /api/approval-flows/:id/toggle - Toggle active status
+router.patch("/:id/toggle", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user_id;
+
+    // Get user's company
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { company_id: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if flow exists and belongs to user's company
+    const existingFlow = await prisma.approvalFlow.findUnique({
+      where: { id },
+      select: { company_id: true, is_active: true },
+    });
+
+    if (!existingFlow) {
+      return res.status(404).json({ error: "Approval flow not found" });
+    }
+
+    if (existingFlow.company_id !== user.company_id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    // Toggle the active status
+    const updatedFlow = await prisma.approvalFlow.update({
+      where: { id },
+      data: { is_active: !existingFlow.is_active },
+      select: { is_active: true },
+    });
+
+    res.json({
+      is_active: updatedFlow.is_active,
+      message: `Approval flow ${updatedFlow.is_active ? "activated" : "deactivated"} successfully`,
+    });
+  } catch (error) {
+    console.error("Error toggling approval flow:", error);
+    res.status(500).json({ error: "Failed to toggle approval flow status" });
   }
 });
 

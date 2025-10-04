@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import expenseRoutes from './routes/expense';
 import approvalFlowRoutes from './routes/approval-flow';
 import approvalsRoutes from './routes/approvals';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/approval-flows', approvalFlowRoutes);
 app.use('/api/approvals', approvalsRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 3001;
 
