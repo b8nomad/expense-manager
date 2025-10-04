@@ -13,6 +13,111 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  EMPLOYEE
+  MANAGER
+  ADMIN
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RuleType {
+  PERCENTAGE
+  SPECIFIC_APPROVER
+  HYBRID
+}
+
+enum UserType {
+  USER
+  ROLE
+}
+
 model User {
-  id String @id @default(uuid())
+  id                  String   @id @default(uuid())
+  email               String   @unique
+  role                Role     @default(EMPLOYEE)
+  manager_id          String?
+  manager             User?    @relation("ManagerSubordinates", fields: [manager_id], references: [id])
+  subordinates        User[]   @relation("ManagerSubordinates")
+  company_id          String
+  company             Company  @relation(fields: [company_id], references: [id])
+  is_manager_approver Boolean  @default(false)
+  expenses            Expense[]
+  approvals           Approval[]
+}
+
+model Company {
+  id        String         @id @default(uuid())
+  name      String
+  country   String
+  currency  String
+  users     User[]
+  flows     ApprovalFlow[]
+  createdAt DateTime       @default(now())
+}
+
+model Expense {
+  id                String        @id @default(uuid())
+  amount            Float
+  currency          String
+  amount_converted  Float?
+  category          String
+  description       String
+  date              DateTime      @default(now())
+  status            Status        @default(PENDING)
+  employee_id       String
+  employee          User          @relation(fields: [employee_id], references: [id])
+  approvals         Approval[]
+  current_step_id   String?
+  current_step      ApprovalStep? @relation("ExpenseCurrentStep", fields: [current_step_id], references: [id])
+  createdAt         DateTime      @default(now())
+}
+
+model Approval {
+  id          String        @id @default(uuid())
+  expense_id  String
+  step_id     String?
+  approver_id String
+  status      Status        @default(PENDING)
+  comments    String?
+  decided_at  DateTime?
+  expense     Expense       @relation(fields: [expense_id], references: [id])
+  approver    User          @relation(fields: [approver_id], references: [id])
+  step        ApprovalStep? @relation(fields: [step_id], references: [id])
+}
+
+model ApprovalFlow {
+  id         String          @id @default(uuid())
+  name       String
+  company_id String
+  company    Company         @relation(fields: [company_id], references: [id])
+  steps      ApprovalStep[]
+  rules      ApprovalRule[]
+  is_active  Boolean         @default(true)
+  created_at DateTime        @default(now())
+}
+
+model ApprovalStep {
+  id              String       @id @default(uuid())
+  flow_id         String
+  flow            ApprovalFlow @relation(fields: [flow_id], references: [id])
+  step_order      Int
+  approver_type   UserType
+  approver_ref    String       // user_id OR role name
+  can_escalate_in Int?         // seconds until escalation
+  approvals       Approval[]
+  expenses        Expense[]    @relation("ExpenseCurrentStep")
+}
+
+model ApprovalRule {
+  id         String       @id @default(uuid())
+  flow_id    String
+  flow       ApprovalFlow @relation(fields: [flow_id], references: [id])
+  rule_type  RuleType
+  params     Json
+  created_at DateTime     @default(now())
 }
