@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import authRoutes from './routes/auth';
 import expenseRoutes from './routes/expense';
 import approvalFlowRoutes from './routes/approval-flow';
+import approvalsRoutes from './routes/approvals';
 
 const app = express();
 
@@ -21,8 +22,9 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/approval-flows', approvalFlowRoutes);
+app.use('/api/approvals', approvalsRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
