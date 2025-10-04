@@ -7,6 +7,7 @@ const router = express.Router();
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
+// POST /api/expenses - Submit a new expense
 router.post("/", async (req, res) => {
   try {
     const { amount, currency, category, description, date } = req.body;
@@ -57,6 +58,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /api/expenses - List expenses with optional filters and pagination
 router.get("/", async (req, res) => {
   try {
     const userId = req.user_id;
@@ -128,6 +130,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/expenses/:id - View a single expense with approval details
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;

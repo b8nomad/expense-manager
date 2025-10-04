@@ -5,7 +5,7 @@ import { signToken } from "../utils/jwt";
 
 const router = express.Router();
 
-// Register
+// POST /api/auth/register - Register a new user and company
 router.post("/register", async (req, res) => {
   const { email, password, userName, companyName, country, currency } = req.body;
   if (!email || !password || !companyName) {
@@ -38,7 +38,7 @@ router.post("/register", async (req, res) => {
   });
 });
 
-// Login
+// POST /api/auth/login - Login user and return JWT
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -63,7 +63,7 @@ router.post("/login", async (req, res) => {
   });
 });
 
-// Me
+// GET /api/auth/me - Get current user info
 router.get("/me", async (req, res) => {
   const token = req.headers["authorization"]?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Missing token" });
