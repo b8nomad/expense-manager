@@ -5,6 +5,7 @@ import helmet from 'helmet';
 
 import authRoutes from './routes/auth';
 import expenseRoutes from './routes/expense';
+import approvalFlowRoutes from './routes/approval-flow';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/approval-flows', approvalFlowRoutes);
 
 const PORT = process.env.PORT || 3000;
 
