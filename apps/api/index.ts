@@ -1,1 +1,25 @@
-console.log("Hello via Bun!");
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import helmet from 'helmet';
+
+import authRoutes from './routes/auth';
+
+const app = express();
+
+app.use(helmet()); // Security middleware
+app.use(cors());
+app.use(morgan('combined')); // HTTP request logger
+app.use(express.json());
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.use('/api/auth', authRoutes);
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
