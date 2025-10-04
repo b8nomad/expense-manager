@@ -95,39 +95,41 @@ router.post("/", async (req, res) => {
       }
       
       // Create approvals for each step in the flow
-      for (const step of flow.steps) {
-        let approverId: string | null = null;
+      if (flow && flow.steps && Array.isArray(flow.steps)) {
+        for (const step of flow.steps) {
+          let approverId: string | null = null;
 
-        if (step.approver_type === "USER") {
-          // Specific user
-          approverId = step.approver_ref;
-        } else if (step.approver_type === "ROLE") {
-          // Find a user with the specified role in the company
-          const roleUser = await prisma.user.findFirst({
-            where: {
-              company_id: user.company_id,
-              role: step.approver_ref as any,
-            },
-          });
-          if (roleUser) {
-            approverId = roleUser.id;
+          if (step.approver_type === "USER") {
+            // Specific user
+            approverId = step.approver_ref;
+          } else if (step.approver_type === "ROLE") {
+            // Find a user with the specified role in the company
+            const roleUser = await prisma.user.findFirst({
+              where: {
+                company_id: user.company_id,
+                role: step.approver_ref as any,
+              },
+            });
+            if (roleUser) {
+              approverId = roleUser.id;
+            }
           }
-        }
 
-        if (approverId && approverId !== userId) {
-          await prisma.approval.create({
-            data: {
-              expense_id: expense.id,
-              approver_id: approverId,
-              step_id: step.id,
-              status: "PENDING",
-            },
-          });
+          if (approverId && approverId !== userId) {
+            await prisma.approval.create({
+              data: {
+                expense_id: expense.id,
+                approver_id: approverId,
+                step_id: step.id,
+                status: "PENDING",
+              },
+            });
+          }
         }
       }
 
       // Set current step to first step
-      if (flow.steps.length > 0) {
+      if (flow && flow.steps && flow.steps.length > 0 && flow.steps[0]) {
         await prisma.expense.update({
           where: { id: expense.id },
           data: { current_step_id: flow.steps[0].id },
