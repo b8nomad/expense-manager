@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 
 import authRoutes from './routes/auth';
+import expenseRoutes from './routes/expense';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 const PORT = process.env.PORT || 3000;
 
